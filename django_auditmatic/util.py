@@ -5,8 +5,6 @@ from django.apps import apps
 from django.conf import settings
 from django.db.models import Model
 
-from build.lib.django_auditmatic.util import generate_sql
-
 
 def find_schemas():
     if not hasattr(settings, "TENANT_MODEL"):
@@ -118,3 +116,45 @@ def process_model(configured_model_m2m_names, app_name, model_name, schema, mode
             if (a, b) not in m2m_names:
                 continue
         stmt = generate_sql(app_name, name, schema, table_name=name)
+
+
+def generate_sql(app_name, model_name, schema, table_name=None, debug=False):
+    table_name = table_name or f"{app_name}_{model_name}"
+    audit_name = f"{schema}.audit_{table_name}"
+    table_name = f"{schema}.{table_name}"
+    stmt = f"""
+    CREATE TABLE {audit_name}
+    (
+        change_date timestamptz default now()
+        before      hstore,
+        after       hstore
+    );
+
+    CREATE OR REPLACE FUNCTION {audit_name}()
+        RETURNS TRIGGER
+        LANGUAGE plpgsql
+    AS $$
+    BEGIN
+        INSERT INTO {audit_name}(before, after)
+            SELECT hstore(old), hstore(new);
+        RETURN new;
+    END;
+    $$;
+
+    CREATE OR REPLACE TRIGGER {audit_name}
+        AFTER INSERT ON {table_name}
+            FOR EACH ROW
+        AFTER UPDATE ON {table_name}
+            FOR EACH ROW
+        AFTER DELETE ON {table_name}
+            FOR EACH ROW
+    EXECUTE PROCEDURE {audit_name}();
+
+    """
+    if debug:
+        print("Statement generated: ", stmt)
+        print("Model Name:", model_name)
+        print("Table Name:", table_name)
+        print("Schema: ", schema)
+
+    return stmt

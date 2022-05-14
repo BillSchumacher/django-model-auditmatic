@@ -24,6 +24,6 @@ setup(
         "Topic :: Software Development :: Libraries",
     ],
     install_requires=["django", "psycopg2"],
-    version="0.0.1",
+    version="0.0.2",
     zip_safe=False,
 )
