@@ -19,7 +19,6 @@ setup(
         "Framework :: Django :: 4.0",
         "Programming Language :: Python",
         "Programming Language :: Python :: 3.9",
-        "Programming Language :: Python :: 3.10",
         "Topic :: Database",
         "Topic :: Software Development :: Libraries",
     ],
