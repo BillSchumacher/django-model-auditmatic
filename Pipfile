@@ -8,13 +8,15 @@ django = "*"
 psycopg2 = "*"
 
 [dev-packages]
-astroid = "2.11.5"
+astroid = "*"
+behave = "*"
+behave-django = "*"
 black = "*"
 flake8 = "*"
 isort = "*"
 pre-commit = "*"
 pylint = "*"
-pylint-django = "2.5.3"
+pylint-django = "*"
 django-environ = "*"
 sphinx = "*"
 

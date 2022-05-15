@@ -15,5 +15,3 @@ try:
     print(subprocComplete.stdout.decode("utf-8"))
 except subprocess.CalledProcessError as err:
     print(err.output.decode("utf-8"))
-    exit(1)
-exit(0)

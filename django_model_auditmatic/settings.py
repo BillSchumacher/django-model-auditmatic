@@ -34,6 +34,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'behave_django',
     "django_auditmatic",
     "django.contrib.admin",
     "django.contrib.auth",
@@ -88,7 +89,7 @@ WSGI_APPLICATION = "django_model_auditmatic.wsgi.application"
 DATABASES = {
     "default": env.db(
         "DATABASE_URL",
-        default="postgres://dj_sanity:insanity@localhost/django_sanity_check",
+        default="postgres://localhost/auditmatic"
     ),
 }
 
