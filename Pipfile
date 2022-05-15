@@ -8,6 +8,7 @@ django = "*"
 psycopg2 = "*"
 
 [dev-packages]
+astroid = "2.11.5"
 black = "*"
 flake8 = "*"
 isort = "*"
