@@ -3,7 +3,7 @@ jobs:
   build:
     docker:
       - image: cimg/python:3.9.7
-      - image: cimg/postgres:14.2.0
+      - image: cimg/postgres:14.2
         environment:
           POSTGRES_DB: 'auditmatic'
           POSTGRES_USER: 'audit'
