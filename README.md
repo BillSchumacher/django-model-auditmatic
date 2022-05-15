@@ -6,9 +6,10 @@ Usage
 ---
 Add django_auditmatic to INSTALLED_APPS.
 
-```python
-INSTALLED_APPS += ["django_auditmatic",]
 ```
+INSTALLED_APPS.append("django_auditmatic")
+```
+
 Configure which models you want to audit in settings.py
 
 ```python
