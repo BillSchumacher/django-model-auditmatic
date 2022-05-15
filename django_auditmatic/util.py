@@ -3,10 +3,16 @@
 """
 
 from collections import defaultdict
-from typing import List, Optional
+from typing import Dict, List, Optional, Tuple
 
 from django.apps import apps
 from django.conf import settings
+
+from django_auditmatic.utils.generate import (
+    generate_function,
+    generate_table,
+    generate_trigger,
+)
 
 
 def find_schemas() -> Optional[List[str]]:
@@ -31,36 +37,60 @@ def find_schemas() -> Optional[List[str]]:
     return tenant_model.objects.values_list("schema_name", flat=True)
 
 
-def get_all_apps_and_models():
+class ConfiguredNames:
     """
-        get all apps and models in the apps.
+        A data object to hold configured name values.
+    """
+    def __init__(self, app_names: List, model_names: Dict, model_m2m_names: Dict):
+        self.app_names = app_names
+        self.model_names = model_names
+        self.model_m2m_names = model_m2m_names
+
+    @staticmethod
+    def from_settings():
+        configured_apps = settings.AUDITMATIC["apps"]
+
+        configured_app_names = []
+        configured_model_names = defaultdict(list)
+        configured_model_m2m_names = defaultdict(list)
+        for configured_app_name, configured_app_models in configured_apps.items():
+            lowered_app_name = configured_app_name.lower()
+            configured_app_names.append(lowered_app_name)
+            for model_name, model_configuration in configured_app_models.items():
+                lowered_model_name = model_name.lower()
+                configured_model_names[lowered_app_name].append(lowered_model_name)
+                m2m_key = f"{lowered_app_name}_{lowered_model_name}"
+                model_m2m_configured_names = model_configuration.get("m2m", [])
+
+                # print("m2m names ", model_m2m_configured_names)
+                if model_m2m_configured_names == any:  # pylint: disable=W0143
+                    # type(model_m2m_configured_names) == callable and \
+
+                    configured_model_m2m_names[m2m_key].append(any)
+                    # print("is any")
+                else:
+                    for value in model_m2m_configured_names:
+                        configured_model_m2m_names[m2m_key].append(value)
+
+        return ConfiguredNames(
+            configured_app_names, configured_model_names, configured_model_m2m_names
+        )
+
+
+def get_tenant_schemas_and_apps() -> Tuple[List, List]:
+    """
+        process tenant configuration if tenants are in use.
     :return:
     """
-
-    configured_apps = settings.AUDITMATIC["apps"]
-
-    configured_app_names = []
-    configured_model_names = defaultdict(list)
-    configured_model_m2m_names = defaultdict(list)
-    for configured_app_name, configured_app_models in configured_apps.items():
-        lowered_app_name = configured_app_name.lower()
-        configured_app_names.append(lowered_app_name)
-        for model_name, model_configuration in configured_app_models.items():
-            lowered_model_name = model_name.lower()
-            configured_model_names[lowered_app_name].append(lowered_model_name)
-            m2m_key = f"{lowered_app_name}_{lowered_model_name}"
-            model_m2m_configured_names = model_configuration.get("m2m", [])
-
-            # print("m2m names ", model_m2m_configured_names)
-            if model_m2m_configured_names == any:  # pylint: disable=W0143
-                # type(model_m2m_configured_names) == callable and \
-
-                configured_model_m2m_names[m2m_key].append(any)
-                # print("is any")
-            else:
-                for value in model_m2m_configured_names:
-                    configured_model_m2m_names[m2m_key].append(value)
-    return configured_app_names, configured_model_names, configured_model_m2m_names
+    tenant_schemas = find_schemas()
+    schema_apps = []
+    if tenant_schemas and len(tenant_schemas) > 0:
+        if not hasattr(settings, "TENANT_APPS"):
+            raise RuntimeError(
+                "Detected tenant model but no apps configured for TENANT_APPS setting."
+            )
+        schema_apps = settings.TENANT_APPS
+    return tenant_schemas, schema_apps
 
 
 def install_triggers():
@@ -71,69 +101,57 @@ def install_triggers():
     # from django.db import connection
 
     # debug = settings.AUDITMATIC.get("debug", False)
-    tenant_schemas = find_schemas()
-    schema_apps = []
-    if tenant_schemas and len(tenant_schemas) > 0:
-        if not hasattr(settings, "TENANT_APPS"):
-            raise RuntimeError(
-                "Detected tenant model but no apps configured for TENANT_APPS setting.0"
-            )
-        schema_apps = settings.TENANT_APPs
+    tenant_schemas, schema_apps = get_tenant_schemas_and_apps()
 
-    (
-        configured_app_names,
-        configured_model_names,
-        configured_model_m2m_names,
-    ) = get_all_apps_and_models()
+    configured_names = ConfiguredNames.from_settings()
+
     for model in apps.get_models():
         process_model_for_all_schemas(
             model,
-            configured_app_names,
-            configured_model_names,
+            configured_names,
             schema_apps,
-            configured_model_m2m_names,
             tenant_schemas,
         )
 
 
 def process_model_for_all_schemas(
     model,
-    configured_app_names,
-    configured_model_names,
+    configured_names,
     schema_apps,
-    configured_model_m2m_names,
     tenant_schemas,
 ):
     """
         process the model for all configured schemas.
     :param model:
-    :param configured_app_names:
-    :param configured_model_names:
+    :param configured_names:
     :param schema_apps:
-    :param configured_model_m2m_names:
     :param tenant_schemas:
     :return:
     """
     app_and_model_name = str(model._meta)
     app_name, model_name = app_and_model_name.split(".")
     print(app_name, app_and_model_name)
-    if app_name not in configured_app_names:
+    if app_name not in configured_names.app_names:
         return
-    if model_name not in configured_model_names[app_name]:
+    if model_name not in configured_names.model_names[app_name]:
         return
 
     schema = "public"
     if not len(schema_apps):
-        process_model(configured_model_m2m_names, app_name, model_name, schema, model)
+        process_model(
+            configured_names.model_m2m_names, app_name, model_name, schema, model
+        )
         return
 
     if app_name not in schema_apps:
-        process_model(configured_model_m2m_names, app_name, model_name, schema, model)
+        process_model(
+            configured_names.model_m2m_names, app_name, model_name, schema, model
+        )
         return
 
     for tenant_schema in tenant_schemas:
         process_model(
-            configured_model_m2m_names, app_name, model_name, tenant_schema, model
+            configured_names.model_m2m_names, app_name, model_name, tenant_schema, model
         )
 
 
@@ -172,7 +190,13 @@ def process_model(configured_model_m2m_names, app_name, model_name, schema, mode
         generate_sql(app_name, name, schema, table_name=name)
 
 
-def generate_sql(app_name, model_name, schema, table_name=None, debug=False):
+def generate_sql(
+    app_name: str,
+    model_name: str,
+    schema: str,
+    table_name: Optional[str] = None,
+    debug: Optional[bool] = False,
+):
     """
         generates the sql
     :param app_name:
@@ -185,39 +209,17 @@ def generate_sql(app_name, model_name, schema, table_name=None, debug=False):
     table_name = table_name or f"{app_name}_{model_name}"
     audit_name = f"{schema}.audit_{table_name}"
     table_name = f"{schema}.{table_name}"
-    stmt = f"""
-    CREATE TABLE {audit_name}
-    (
-        change_date timestamptz default now()
-        before      hstore,
-        after       hstore
-    );
 
-    CREATE OR REPLACE FUNCTION {audit_name}()
-        RETURNS TRIGGER
-        LANGUAGE plpgsql
-    AS $$
-    BEGIN
-        INSERT INTO {audit_name}(before, after)
-            SELECT hstore(old), hstore(new);
-        RETURN new;
-    END;
-    $$;
-
-    CREATE OR REPLACE TRIGGER {audit_name}
-        AFTER INSERT ON {table_name}
-            FOR EACH ROW
-        AFTER UPDATE ON {table_name}
-            FOR EACH ROW
-        AFTER DELETE ON {table_name}
-            FOR EACH ROW
-    EXECUTE PROCEDURE {audit_name}();
-
+    statement = f"""
+    {generate_table(audit_name)}
+    {generate_function(audit_name)}
+    {generate_trigger(audit_name, table_name)}
     """
+
     if debug:
-        print("Statement generated: ", stmt)
+        print("Statement generated: ", statement)
         print("Model Name:", model_name)
         print("Table Name:", table_name)
         print("Schema: ", schema)
 
-    return stmt
+    return statement
