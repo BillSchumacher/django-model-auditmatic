@@ -7,4 +7,4 @@ jobs:
       - checkout
       - run: pip install --user pipenv
       - run: pipenv install
-      - run: ./qa.sh
+      - run: pipenv shell && ./qa.sh
