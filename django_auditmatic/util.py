@@ -48,33 +48,56 @@ class ConfiguredNames:
         self.model_m2m_names = model_m2m_names
 
     @staticmethod
+    def process_app_models(app_name, app_names, app_models, model_names, model_m2m_names):
+        """
+            process app configured models
+        :param app_name:
+        :param app_names:
+        :param app_models:
+        :param model_names:
+        :param model_m2m_names:
+        :return:
+        """
+        lowered_app_name = app_name.lower()
+        app_names.append(lowered_app_name)
+        for model_name, model_configuration in app_models.items():
+            lowered_model_name = model_name.lower()
+            model_names[lowered_app_name].append(lowered_model_name)
+            m2m_key = f"{lowered_app_name}_{lowered_model_name}"
+            model_m2m_configured_names = model_configuration.get("m2m", [])
+
+            # print("m2m names ", model_m2m_configured_names)
+            if model_m2m_configured_names == any:  # pylint: disable=W0143
+                # type(model_m2m_configured_names) == callable and \
+
+                model_m2m_names[m2m_key].append(any)
+                # print("is any")
+            else:
+                for value in model_m2m_configured_names:
+                    model_m2m_names[m2m_key].append(value)
+
+    @staticmethod
     def from_settings():
+        """
+            creates ConfiguredNames from settings.
+        :return:
+        """
         configured_apps = settings.AUDITMATIC["apps"]
 
-        configured_app_names = []
-        configured_model_names = defaultdict(list)
-        configured_model_m2m_names = defaultdict(list)
-        for configured_app_name, configured_app_models in configured_apps.items():
-            lowered_app_name = configured_app_name.lower()
-            configured_app_names.append(lowered_app_name)
-            for model_name, model_configuration in configured_app_models.items():
-                lowered_model_name = model_name.lower()
-                configured_model_names[lowered_app_name].append(lowered_model_name)
-                m2m_key = f"{lowered_app_name}_{lowered_model_name}"
-                model_m2m_configured_names = model_configuration.get("m2m", [])
-
-                # print("m2m names ", model_m2m_configured_names)
-                if model_m2m_configured_names == any:  # pylint: disable=W0143
-                    # type(model_m2m_configured_names) == callable and \
-
-                    configured_model_m2m_names[m2m_key].append(any)
-                    # print("is any")
-                else:
-                    for value in model_m2m_configured_names:
-                        configured_model_m2m_names[m2m_key].append(value)
+        app_names = []
+        model_names = defaultdict(list)
+        model_m2m_names = defaultdict(list)
+        for app_name, app_models in configured_apps.items():
+            ConfiguredNames.process_app_models(
+                app_name,
+                app_names,
+                app_models,
+                model_names,
+                model_m2m_names
+            )
 
         return ConfiguredNames(
-            configured_app_names, configured_model_names, configured_model_m2m_names
+            app_names, model_names, model_m2m_names
         )
 
 
@@ -138,7 +161,7 @@ def process_model_for_all_schemas(
         return
 
     schema = "public"
-    if not len(schema_apps):
+    if not len(schema_apps):  # pylint: disable=C1802
         process_model(
             configured_names.model_m2m_names, app_name, model_name, schema, model
         )
