@@ -7,5 +7,6 @@ jobs:
       - checkout
       - run: pip install --user pipenv
       - run: pipenv install
+      - run: pipenv install --dev --pre
       - run: pipenv run ./qa.sh
       - run: pipenv run python manage.py behave
