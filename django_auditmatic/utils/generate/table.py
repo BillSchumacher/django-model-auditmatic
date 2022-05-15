@@ -12,7 +12,7 @@ def generate_table(audit_name: str) -> str:
     return f"""
     CREATE TABLE {audit_name}
     (
-        change_date timestamptz default now()
+        change_date timestamptz default now(),
         before      hstore,
         after       hstore
     );

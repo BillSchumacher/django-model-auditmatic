@@ -20,3 +20,11 @@ def generated_statement_contains_table_name(context):
     :type context: behave.runner.Context
     """
     context.test.assertTrue(context.audit_name in context.statement_generated)
+
+
+@then("the statement generated should contain hstore")
+def generated_statement_contains_hstore(context):
+    """
+    :type context: behave.runner.Context
+    """
+    context.test.assertTrue("hstore" in context.statement_generated)

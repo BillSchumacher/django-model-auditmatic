@@ -7,9 +7,11 @@ from typing import Dict, List, Optional, Tuple
 
 from django.apps import apps
 from django.conf import settings
+from django.db import connection
 
 from django_auditmatic.utils.generate import (
     generate_function,
+    generate_install_hstore,
     generate_table,
     generate_trigger,
 )
@@ -118,7 +120,6 @@ def install_triggers():
         installs the auditing triggers and such for the configured models.
     :return:
     """
-    # from django.db import connection
 
     # debug = settings.AUDITMATIC.get("debug", False)
     tenant_schemas, schema_apps = get_tenant_schemas_and_apps()
@@ -132,6 +133,27 @@ def install_triggers():
             schema_apps,
             tenant_schemas,
         )
+
+
+class ModelNames:
+    """
+    a data object that stores info about a model
+    """
+
+    def __init__(self, app_name, model_name, model):
+        self.app_name = app_name
+        self.model_name = model_name
+        self.model = model
+
+    @staticmethod
+    def from_model(model):
+        """generates an object from a model"""
+        app_and_model_name = str(model._meta)
+        app_name, model_name = app_and_model_name.split(".")
+        return ModelNames(app_name, model_name, model)
+
+    def __repr__(self):
+        return f"{self.app_name}_{self.model_name}"
 
 
 def process_model_for_all_schemas(
@@ -148,44 +170,45 @@ def process_model_for_all_schemas(
     :param tenant_schemas:
     :return:
     """
-    app_and_model_name = str(model._meta)
-    app_name, model_name = app_and_model_name.split(".")
-    print(app_name, app_and_model_name)
-    if app_name not in configured_names.app_names:
+    model_names = ModelNames.from_model(model)
+    if model_names.app_name not in configured_names.app_names:
         return
-    if model_name not in configured_names.model_names[app_name]:
+    if model_names.model_name not in configured_names.model_names[model_names.app_name]:
         return
 
     schema = "public"
-    if not len(schema_apps):  # pylint: disable=C1802
-        process_model(
-            configured_names.model_m2m_names, app_name, model_name, schema, model
-        )
-        return
 
-    if app_name not in schema_apps:
-        process_model(
-            configured_names.model_m2m_names, app_name, model_name, schema, model
-        )
-        return
+    with connection.cursor() as cursor:
+        cursor.execute(generate_install_hstore())
+        if not len(schema_apps):  # pylint: disable=C1802
+            process_model(cursor, configured_names.model_m2m_names, model_names, schema)
+            return
 
-    for tenant_schema in tenant_schemas:
-        process_model(
-            configured_names.model_m2m_names, app_name, model_name, tenant_schema, model
-        )
+        if model_names.app_name not in schema_apps:
+            process_model(cursor, configured_names.model_m2m_names, model_names, schema)
+            return
+
+        for tenant_schema in tenant_schemas:
+            process_model(
+                cursor, configured_names.model_m2m_names, model_names, tenant_schema
+            )
 
 
-def process_model(configured_model_m2m_names, app_name, model_name, schema, model):
+def process_model(cursor, configured_model_m2m_names, model_names, schema):
     """
         generates sql for the model and any many to many models configured.
+    :param cursor:
     :param configured_model_m2m_names:
-    :param app_name:
-    :param model_name:
+    :param model_names:
     :param schema:
     :param model:
     :return:
     """
-    generate_sql(app_name, model_name, schema)
+    app_name = model_names.app_name
+    model_name = model_names.model_name
+    statement = generate_sql(app_name, model_name, schema)
+
+    cursor.execute(statement)
     m2m_key = f"{app_name}_{model_name}"
     is_any = False
     m2m_names = configured_model_m2m_names[m2m_key]
@@ -200,14 +223,15 @@ def process_model(configured_model_m2m_names, app_name, model_name, schema, mode
                 )
             )
 
-    for field in model._meta.many_to_many:
+    for field in model_names.model._meta.many_to_many:
         name = field.m2m_db_table()
         if not is_any:
             model_name = field.model._meta.model_name
             related_model_name = field.related_model._meta.model_name
             if (model_name, related_model_name) not in m2m_names:
                 continue
-        generate_sql(app_name, name, schema, table_name=name)
+        statement = generate_sql(app_name, name, schema, table_name=name)
+        cursor.execute(statement)
 
 
 def generate_sql(
@@ -215,7 +239,7 @@ def generate_sql(
     model_name: str,
     schema: str,
     table_name: Optional[str] = None,
-    debug: Optional[bool] = False,
+    debug: Optional[bool] = True,
 ):
     """
         generates the sql
@@ -233,7 +257,9 @@ def generate_sql(
     statement = f"""
     {generate_table(audit_name)}
     {generate_function(audit_name)}
-    {generate_trigger(audit_name, table_name)}
+    {generate_trigger(audit_name, table_name, "INSERT")}
+    {generate_trigger(audit_name, table_name, "UPDATE")}
+    {generate_trigger(audit_name, table_name, "DELETE")}
     """
 
     if debug:
