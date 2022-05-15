@@ -20,3 +20,4 @@ Things that need doing
 - Improve code coverage.
 - Improve code quality as measured by sourcery.
 - Improve typing.
+- See if it's possible to escape table, trigger, function name variables in execute().
