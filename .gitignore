@@ -5,3 +5,4 @@ dist/
 *.pyc
 __CACHE__
 __PYCACHE__
+Pipfile.lock

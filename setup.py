@@ -1,7 +1,6 @@
 from os.path import exists
 
-from setuptools import find_packages
-from setuptools import setup
+from setuptools import find_packages, setup
 
 setup(
     name="django-model-auditmatic",
@@ -11,7 +10,8 @@ setup(
     scripts=[],
     url="https://github.com/BillSchumacher/django-model-auditmatic",
     license="MIT",
-    description="Audit support for Django models using PostgreSQL triggers and stored procedures.",
+    description="Audit support for Django models using PostgreSQL "
+    "triggers and stored procedures.",
     long_description=open("README.md").read() if exists("README.md") else "",
     classifiers=[
         "License :: OSI Approved :: MIT License",

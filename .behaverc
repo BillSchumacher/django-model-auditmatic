@@ -1,0 +1,5 @@
+[behave]
+# paths = api/tests/authentication/acceptance
+#     api/tests/person/acceptance
+junit_directory = reports
+junit = yes
