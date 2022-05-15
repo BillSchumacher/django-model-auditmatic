@@ -48,7 +48,9 @@ class ConfiguredNames:
         self.model_m2m_names = model_m2m_names
 
     @staticmethod
-    def process_app_models(app_name, app_names, app_models, model_names, model_m2m_names):
+    def process_app_models(
+        app_name, app_names, app_models, model_names, model_m2m_names
+    ):
         """
             process app configured models
         :param app_name:
@@ -89,16 +91,10 @@ class ConfiguredNames:
         model_m2m_names = defaultdict(list)
         for app_name, app_models in configured_apps.items():
             ConfiguredNames.process_app_models(
-                app_name,
-                app_names,
-                app_models,
-                model_names,
-                model_m2m_names
+                app_name, app_names, app_models, model_names, model_m2m_names
             )
 
-        return ConfiguredNames(
-            app_names, model_names, model_m2m_names
-        )
+        return ConfiguredNames(app_names, model_names, model_m2m_names)
 
 
 def get_tenant_schemas_and_apps() -> Tuple[List, List]:
