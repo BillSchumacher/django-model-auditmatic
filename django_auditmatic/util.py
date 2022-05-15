@@ -39,8 +39,9 @@ def find_schemas() -> Optional[List[str]]:
 
 class ConfiguredNames:
     """
-        A data object to hold configured name values.
+    A data object to hold configured name values.
     """
+
     def __init__(self, app_names: List, model_names: Dict, model_m2m_names: Dict):
         self.app_names = app_names
         self.model_names = model_names
