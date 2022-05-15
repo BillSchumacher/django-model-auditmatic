@@ -89,7 +89,7 @@ WSGI_APPLICATION = "django_model_auditmatic.wsgi.application"
 DATABASES = {
     "default": env.db(
         "DATABASE_URL",
-        default="postgres://localhost/auditmatic"
+        default="postgres://audit:matic@localhost/auditmatic"
     ),
 }
 
