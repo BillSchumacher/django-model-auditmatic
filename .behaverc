@@ -1,5 +1,4 @@
 [behave]
-# paths = api/tests/authentication/acceptance
-#     api/tests/person/acceptance
+paths = django_auditmatic/tests/test_generate/acceptance
 junit_directory = reports
 junit = yes
