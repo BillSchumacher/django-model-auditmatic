@@ -1,9 +1,9 @@
 """
-    django command to install triggers
+    django command to install audit permissions
 """
 from django.core.management.base import BaseCommand
 
-from django_auditmatic.install.audit import install_audit
+from django_auditmatic.install.audit_permission import install_audit_permission
 
 
 class Command(BaseCommand):
@@ -18,4 +18,4 @@ class Command(BaseCommand):
         pass
 
     def handle(self, *args, **options):
-        install_audit()
+        install_audit_permission()

@@ -1,3 +1,6 @@
+"""
+    audit permission
+"""
 from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Model
@@ -25,14 +28,14 @@ class PermissionSettings:
 permission_settings = PermissionSettings()
 
 
-def create_audit_permission_for_model(model: Model) -> None:
+def get_or_create_audit_permission(model: Model) -> Permission:
     """
         create an audit permission for the given model.
     :param model:
     :return:
     """
     content_type = ContentType.objects.get_for_model(model)
-    Permission.objects.create(
+    return Permission.objects.get_or_create(
         codename=permission_settings.codename,
         name=f'{permission_settings.name} {model._meta.object_name}',
         content_type=content_type,
