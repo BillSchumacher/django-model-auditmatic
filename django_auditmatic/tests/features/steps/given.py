@@ -20,7 +20,7 @@ def user_exists(context):
     context.user = obj
     try:
         any_group = Group.objects.get(name="Any")
-    except Group.DoesNotExist as _:
+    except Group.DoesNotExist:
         any_group = Group.objects.create(name="Any")
     any_group.user_set.add(obj)
     assert context.user is not None
