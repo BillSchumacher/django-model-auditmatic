@@ -2,7 +2,6 @@
 given steps
 """
 from django.conf import settings
-from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, User
 from django.test import override_settings
 
@@ -21,7 +20,7 @@ def user_exists(context):
     context.user = obj
     try:
         any_group = Group.objects.get(name="Any")
-    except Group.DoesNotExist as ex:
+    except Group.DoesNotExist as _:
         any_group = Group.objects.create(name="Any")
     any_group.user_set.add(obj)
     assert context.user is not None

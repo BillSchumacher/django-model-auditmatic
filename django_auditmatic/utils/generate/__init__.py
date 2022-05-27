@@ -29,10 +29,17 @@ def generate_sql(
     """
     if verbs is None:
         verbs = ["INSERT", "UPDATE", "DELETE"]
-    table_name, audit_name = get_table_and_audit_name(app_name, model_name, schema, table_name)
+    table_name, audit_name = get_table_and_audit_name(
+        app_name,
+        model_name,
+        schema,
+        table_name
+    )
     table_statement = generate_table(audit_name)
     function_statement = generate_function(audit_name)
-    triggers = '\n'.join([generate_trigger(audit_name, table_name, verb) for verb in verbs])
+    triggers = '\n'.join([
+        generate_trigger(audit_name, table_name, verb) for verb in verbs
+    ])
     statement = combine_statements(table_statement, function_statement, triggers)
 
     if debug:
@@ -70,7 +77,12 @@ def combine_statements(table_stmt: str, function_stmt: str, triggers: str) -> st
     """
 
 
-def log_generated(statement: str, model_name: str, table_name: str, schema: str) -> None:
+def log_generated(
+    statement: str,
+    model_name: str,
+    table_name: str,
+    schema: str
+) -> None:
     """
 
     :param statement:
