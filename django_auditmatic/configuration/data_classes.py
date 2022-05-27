@@ -2,9 +2,25 @@
     configuration data classes
 """
 from collections import defaultdict
-from typing import List, Dict
+from typing import Dict, List
 
 from django.conf import settings
+
+
+class AuditMaticAppConfiguration:
+    def __init__(self):
+        pass
+
+
+class AuditMaticPermissionConfiguration:
+    def __init__(self):
+        pass
+
+
+class AuditMaticConfiguration:
+    def __init__(self):
+        self.apps = {}
+        self.permission = {}
 
 
 class ConfiguredNames:
@@ -12,17 +28,21 @@ class ConfiguredNames:
     A data object to hold configured name values.
     """
 
-    def __init__(self, app_names: List, model_names: Dict, model_m2m_names: Dict):
+    def __init__(
+        self, app_names: List, model_names: Dict, model_m2m_names: Dict, allow_any: Dict
+    ):
         self.app_names = app_names
         self.model_names = model_names
+        self.allow_any = allow_any
         self.model_m2m_names = model_m2m_names
 
     @staticmethod
     def process_app_models(
-        app_name, app_names, app_models, model_names, model_m2m_names
+        app_name, app_names, app_models, model_names, model_m2m_names, allow_any
     ):
         """
             process app configured models
+        :param allow_any:
         :param app_name:
         :param app_names:
         :param app_models:
@@ -32,7 +52,14 @@ class ConfiguredNames:
         """
         lowered_app_name = app_name.lower()
         app_names.append(lowered_app_name)
-        for model_name, model_configuration in app_models.items():
+        app_models_type = type(app_models)
+        if app_models_type == set:
+            names = [(name, {}) for name in app_models]
+        elif app_models_type == dict:
+            names = app_models.items()
+        else:
+            raise NotImplementedError()
+        for model_name, model_configuration in names:
             lowered_model_name = model_name.lower()
             model_names[lowered_app_name].append(lowered_model_name)
             m2m_key = f"{lowered_app_name}_{lowered_model_name}"
@@ -48,6 +75,10 @@ class ConfiguredNames:
                 for value in model_m2m_configured_names:
                     model_m2m_names[m2m_key].append(value)
 
+            model_allow = model_configuration.get("allow", False)
+            if model_allow == any:
+                allow_any[lowered_model_name] = True
+
     @staticmethod
     def from_settings():
         """
@@ -59,12 +90,13 @@ class ConfiguredNames:
         app_names = []
         model_names = defaultdict(list)
         model_m2m_names = defaultdict(list)
+        allow_any = defaultdict(bool)
         for app_name, app_models in configured_apps.items():
             ConfiguredNames.process_app_models(
-                app_name, app_names, app_models, model_names, model_m2m_names
+                app_name, app_names, app_models, model_names, model_m2m_names, allow_any
             )
 
-        return ConfiguredNames(app_names, model_names, model_m2m_names)
+        return ConfiguredNames(app_names, model_names, model_m2m_names, allow_any)
 
 
 class ModelNames:

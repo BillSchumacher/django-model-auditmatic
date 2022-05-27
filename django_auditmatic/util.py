@@ -1,21 +1,30 @@
 """
     database utility functions
 """
+from typing import Optional
 
-from collections import defaultdict
-from typing import Dict, List, Optional, Tuple
-
-from django.apps import apps
-from django.conf import settings
 from django.db import connection
+from django.db.models import Model
 
-from django_auditmatic.configuration.data_classes import ModelNames
-from django_auditmatic.utils.generate import (
-    generate_function,
-    generate_install_hstore,
-    generate_table,
-    generate_trigger,
-)
+from django_auditmatic.configuration.data_classes import ConfiguredNames, ModelNames
+from django_auditmatic.utils.generate import generate_install_hstore, generate_sql
+
+
+def get_model_names(
+    model: Model, configured_names: ConfiguredNames
+) -> Optional[ModelNames]:
+    """
+        process the model for all configured schemas.
+    :param model:
+    :param configured_names:
+    :return:
+    """
+    model_names = ModelNames.from_model(model)
+    if model_names.app_name not in configured_names.app_names:
+        return
+    if model_names.model_name not in configured_names.model_names[model_names.app_name]:
+        return
+    return model_names
 
 
 def process_model_for_all_schemas(
@@ -94,40 +103,3 @@ def process_model(cursor, configured_model_m2m_names, model_names, schema):
                 continue
         statement = generate_sql(app_name, name, schema, table_name=name)
         cursor.execute(statement)
-
-
-def generate_sql(
-    app_name: str,
-    model_name: str,
-    schema: str,
-    table_name: Optional[str] = None,
-    debug: Optional[bool] = True,
-):
-    """
-        generates the sql
-    :param app_name:
-    :param model_name:
-    :param schema:
-    :param table_name:
-    :param debug:
-    :return:
-    """
-    table_name = table_name or f"{app_name}_{model_name}"
-    audit_name = f"{schema}.audit_{table_name}"
-    table_name = f"{schema}.{table_name}"
-
-    statement = f"""
-    {generate_table(audit_name)}
-    {generate_function(audit_name)}
-    {generate_trigger(audit_name, table_name, "INSERT")}
-    {generate_trigger(audit_name, table_name, "UPDATE")}
-    {generate_trigger(audit_name, table_name, "DELETE")}
-    """
-
-    if debug:
-        print("Statement generated: ", statement)
-        print("Model Name:", model_name)
-        print("Table Name:", table_name)
-        print("Schema: ", schema)
-
-    return statement

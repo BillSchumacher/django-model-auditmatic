@@ -1,4 +1,4 @@
-from typing import Optional, List, Tuple
+from typing import List, Optional, Tuple
 
 from django.apps import apps
 from django.conf import settings
