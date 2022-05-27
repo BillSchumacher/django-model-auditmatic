@@ -7,7 +7,7 @@ jobs:
       postgres-image:
         type: string
     docker:
-      - image: cimg/python:3.10.4
+      - image: << parameters.python-image >>
       - image: << parameters.postgres-image >>
         environment:
           POSTGRES_DB: 'auditmatic'
