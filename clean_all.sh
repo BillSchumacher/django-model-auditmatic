@@ -5,3 +5,4 @@ rm *.egg-info -rf
 rm **/*.egg-info -rf
 rm *.pyc -rf
 rm **/*.pyc -rf
+rm reports -rf
