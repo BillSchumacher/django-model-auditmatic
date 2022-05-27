@@ -16,10 +16,10 @@ jobs:
     steps:
       - checkout
       - run: pip install --user pipenv
-      - run: PIPENV_QUIET=True pipenv install --system --skip-lock
-      - run: PIPENV_QUIET=True pipenv install --dev --pre --system --skip-lock
-      - run: pipenv run ./qa.sh
-      - run: pipenv run python manage.py behave
+      - run: PIPENV_DONT_USE_PYENV=True PIPENV_QUIET=True pipenv install --system --skip-lock
+      - run: PIPENV_DONT_USE_PYENV=True PIPENV_QUIET=True pipenv install --dev --pre --system --skip-lock
+      - run: PIPENV_DONT_USE_PYENV=True pipenv run ./qa.sh
+      - run: PIPENV_DONT_USE_PYENV=True pipenv run python manage.py behave
 
 workflows:
   all-tests:
