@@ -3,7 +3,6 @@ given steps
 """
 from django.conf import settings
 from django.contrib.auth.models import Group, User
-from django.test import override_settings
 
 from behave import given, use_step_matcher  # pylint: disable=E0611
 
@@ -26,15 +25,6 @@ def user_exists(context):
     assert context.user is not None
 
 
-@override_settings(
-    AUDITMATIC={
-        "apps": {
-            "auth": {
-                "User": {"allow": any},
-            }
-        }
-    }
-)
 @given("the user model is configured with allow: any")
 def user_model_configured_with_allow_any(context):
     """
@@ -49,7 +39,6 @@ def user_model_configured_with_allow_any(context):
     }
 
 
-@override_settings(AUDITMATIC={"apps": {"auth": {"User"}}})
 @given("the user model is configured")
 def user_model_is_configured(context):
     """
