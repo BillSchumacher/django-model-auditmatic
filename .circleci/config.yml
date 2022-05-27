@@ -16,7 +16,7 @@ jobs:
     steps:
       - checkout
       - run: pip install --user pipenv
-      - run: pipenv install --system --deploy
+      - run: pipenv install --system --skip-lock
       - run: pipenv install --dev --pre --system
       - run: pipenv run ./qa.sh
       - run: pipenv run python manage.py behave
