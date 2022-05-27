@@ -3,7 +3,7 @@ jobs:
   test:
     parameters:
       python-image:
-        type: executor
+        type: string
       postgres-image:
         type: string
     docker:
