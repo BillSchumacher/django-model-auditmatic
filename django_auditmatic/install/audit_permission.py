@@ -29,7 +29,6 @@ def install_audit_permission():
             perm = get_or_create_audit_permission(model)
             if configured_names.allow_any[model._meta.object_name.lower()]:
                 group.permissions.add(perm)
-            return
 
         # if model_names.app_name not in schema_apps:
         #     get_or_create_audit_permission(model, schema)
