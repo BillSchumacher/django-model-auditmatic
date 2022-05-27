@@ -1,7 +1,7 @@
 """
     database utility functions
 """
-from typing import Optional
+from typing import List, Optional, Tuple
 
 from django.db import connection
 from django.db.models import Model
@@ -28,8 +28,8 @@ def get_model_names(
 
 
 def process_model_for_all_schemas(
-    model,
-    configured_names,
+    model: Model,
+    configured_names: ConfiguredNames,
     schema_apps,
     tenant_schemas,
 ):
@@ -41,11 +41,7 @@ def process_model_for_all_schemas(
     :param tenant_schemas:
     :return:
     """
-    model_names = ModelNames.from_model(model)
-    if model_names.app_name not in configured_names.app_names:
-        return
-    if model_names.model_name not in configured_names.model_names[model_names.app_name]:
-        return
+    model_names = get_model_names(model, configured_names)
 
     schema = "public"
 
@@ -77,29 +73,50 @@ def process_model(cursor, configured_model_m2m_names, model_names, schema):
     """
     app_name = model_names.app_name
     model_name = model_names.model_name
-    statement = generate_sql(app_name, model_name, schema)
-
-    cursor.execute(statement)
+    generate_and_execute(cursor, app_name, model_name, schema)
     m2m_key = f"{app_name}_{model_name}"
-    is_any = False
+    is_any, m2m_names = get_m2m_names(configured_model_m2m_names, m2m_key)
+    for field in model_names.model._meta.many_to_many:
+        process_m2m_field(field, is_any, m2m_names, app_name, schema, cursor)
+
+
+def generate_and_execute(
+    cursor, app_name, model_name, schema, table_name: Optional[str] = None
+):
+    statement = generate_sql(app_name, model_name, schema, table_name=table_name)
+    cursor.execute(statement)
+
+
+def check_m2m_configured(field, m2m_names) -> bool:
+    model_name = field.model._meta.model_name
+    related_model_name = field.related_model._meta.model_name
+    if (model_name, related_model_name) not in m2m_names:
+        return False
+    return True
+
+
+def process_m2m_field(field, is_any, m2m_names, app_name, schema, cursor):
+    name = field.m2m_db_table()
+    if not is_any and not check_m2m_configured(field, m2m_names):
+        return
+    generate_and_execute(cursor, app_name, name, schema, table_name=name)
+
+
+def get_m2m_names(configured_model_m2m_names, m2m_key) -> Tuple[List[str], bool]:
+    """
+
+    :param configured_model_m2m_names:
+    :param m2m_key:
+    :return: List of many-to-many names, use any name.
+    """
     m2m_names = configured_model_m2m_names[m2m_key]
     if m2m_names == any or any in m2m_names:  # pylint: disable=W0143
-        is_any = True
-    else:
-        for m2m_name in m2m_names:
-            m2m_names.append(
-                (
-                    m2m_name[0].lower(),
-                    m2m_name[1].lower(),
-                )
+        return [], True
+    for m2m_name in m2m_names:
+        m2m_names.append(
+            (
+                m2m_name[0].lower(),
+                m2m_name[1].lower(),
             )
-
-    for field in model_names.model._meta.many_to_many:
-        name = field.m2m_db_table()
-        if not is_any:
-            model_name = field.model._meta.model_name
-            related_model_name = field.related_model._meta.model_name
-            if (model_name, related_model_name) not in m2m_names:
-                continue
-        statement = generate_sql(app_name, name, schema, table_name=name)
-        cursor.execute(statement)
+        )
+    return m2m_names, False

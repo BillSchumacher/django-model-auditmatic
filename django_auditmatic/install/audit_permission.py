@@ -10,10 +10,10 @@ from django_auditmatic.permission import get_or_create_audit_permission
 from django_auditmatic.util import get_model_names
 
 
-def install_audit_permission():
+def install_audit_permission() -> None:
     """
-        install audit permission for configured models.
-    :return:
+    install audit permission for configured models.
+    :return: None
     """
     tenant_schemas, schema_apps = get_tenant_schemas_and_apps()
     group, _ = Group.objects.get_or_create(name="Any")
@@ -29,10 +29,3 @@ def install_audit_permission():
             perm = get_or_create_audit_permission(model)
             if configured_names.allow_any[model._meta.object_name.lower()]:
                 group.permissions.add(perm)
-
-        # if model_names.app_name not in schema_apps:
-        #     get_or_create_audit_permission(model, schema)
-        #     return
-
-        # for tenant_schema in tenant_schemas:
-        #     get_or_create_audit_permission(model, tenant_schema)
