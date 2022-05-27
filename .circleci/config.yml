@@ -21,6 +21,7 @@ jobs:
       - run: ./qa.sh
       - run: python manage.py behave
 
+
 workflows:
   all-tests:
     jobs:
