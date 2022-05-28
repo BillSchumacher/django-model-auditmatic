@@ -3,9 +3,9 @@ jobs:
   test:
     parameters:
       python-version:
-        type: array
+        type: string
       postgres-version:
-        type: array
+        type: string
     name: Python << parameters.python-version >> with PostgreSQL << paramenters.postgres-version >>
     docker:
       - image: cimg/python:<< parameters.python-version >>
