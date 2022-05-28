@@ -28,6 +28,6 @@ workflows:
       - test:
           matrix:
             parameters:
-              python-image: ["3.8.13", "3.9.13", "3.10.4"]
-              postgres-image: ["14.2", "13.6", "11.15"]
+              python-version: ["3.8.13", "3.9.13", "3.10.4"]
+              postgres-version: ["14.2", "13.6", "11.15"]
           name: Python << parameters.python-version >> with PostgreSQL << paramenters.postgres-version >>
