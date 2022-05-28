@@ -2,13 +2,14 @@ version: 2.1
 jobs:
   test:
     parameters:
-      python-image:
-        type: string
-      postgres-image:
-        type: string
+      python-version:
+        type: array
+      postgres-version:
+        type: array
+    name: Python << parameters.python-version >> with PostgreSQL << paramenters.postgres-version >>
     docker:
-      - image: << parameters.python-image >>
-      - image: << parameters.postgres-image >>
+      - image: cimg/python:<< parameters.python-version >>
+      - image: cimg/postgres:<< parameters.postgres-version >>
         environment:
           POSTGRES_DB: 'auditmatic'
           POSTGRES_USER: 'audit'
@@ -28,5 +29,5 @@ workflows:
       - test:
           matrix:
             parameters:
-              python-image: ["cimg/python:3.8.13", "cimg/python:3.9.13", "cimg/python:3.10.4"]
-              postgres-image: ["cimg/postgres:14.2", "cimg/postgres:13.6", "cimg/postgres:11.15"]
+              python-image: ["3.8.13", "3.9.13", "3.10.4"]
+              postgres-image: ["14.2", "13.6", "11.15"]
