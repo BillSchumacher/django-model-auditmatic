@@ -6,7 +6,6 @@ jobs:
         type: string
       postgres-version:
         type: string
-    name: Python << parameters.python-version >> with PostgreSQL << paramenters.postgres-version >>
     docker:
       - image: cimg/python:<< parameters.python-version >>
       - image: cimg/postgres:<< parameters.postgres-version >>
@@ -31,3 +30,4 @@ workflows:
             parameters:
               python-image: ["3.8.13", "3.9.13", "3.10.4"]
               postgres-image: ["14.2", "13.6", "11.15"]
+          name: Python << parameters.python-version >> with PostgreSQL << paramenters.postgres-version >>
