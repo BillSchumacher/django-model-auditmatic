@@ -30,4 +30,4 @@ workflows:
             parameters:
               python-version: ["3.8.13", "3.9.13", "3.10.4"]
               postgres-version: ["14.2", "13.6", "11.15"]
-          name: python-<< parameters.python-version >>-with-postgres-<< paramenters.postgres-version >>
+          name: test-<< parameters.python-version >>-with-postgres-<< paramenters.postgres-version >>
