@@ -12,7 +12,7 @@ setup(
     license="MIT",
     description="Audit support for Django models using PostgreSQL "
     "triggers and stored procedures.",
-    long_description=open("README.md").read() if exists("README.md") else "",
+    long_description=open("README.rst").read() if exists("README.rst") else "",
     classifiers=[
         "License :: OSI Approved :: MIT License",
         "Framework :: Django",
@@ -23,6 +23,6 @@ setup(
         "Topic :: Software Development :: Libraries",
     ],
     install_requires=["django", "psycopg2"],
-    version="0.1.0",
+    version="0.1.1",
     zip_safe=False,
 )
