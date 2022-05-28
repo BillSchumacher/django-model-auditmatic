@@ -6,9 +6,11 @@ jobs:
         type: string
       postgres-version:
         type: string
+      with:
+        type: string
     docker:
-      - image: cimg/python:<< parameters.python-version >>
-      - image: cimg/postgres:<< parameters.postgres-version >>
+      - image: cimg/<< parameters.python-version >>
+      - image: cimg/<< parameters.postgres-version >>
         environment:
           POSTGRES_DB: 'auditmatic'
           POSTGRES_USER: 'audit'
@@ -28,6 +30,6 @@ workflows:
       - test:
           matrix:
             parameters:
-              python-version: ["3.8.13", "3.9.13", "3.10.4"]
-              postgres-version: ["14.2", "13.6", "11.15"]
-          name: test-<< parameters.python-version >>-with-postgres-<< paramenters.postgres-version >>
+              python-version: ["python:3.8.13", "python:3.9.13", "python:3.10.4"]
+              with: ["with"]
+              postgres-version: ["postgres:14.2", "postgres:13.6", "postgres:11.15"]
