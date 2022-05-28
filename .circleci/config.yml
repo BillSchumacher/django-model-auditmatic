@@ -4,9 +4,9 @@ jobs:
     parameters:
       python-version:
         type: string
-      postgres-version:
-        type: string
       with:
+        type: string
+      postgres-version:
         type: string
     docker:
       - image: cimg/<< parameters.python-version >>
